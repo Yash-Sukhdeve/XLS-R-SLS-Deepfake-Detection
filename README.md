@@ -221,7 +221,21 @@ python -m sls_asvspoof.evaluate --track Wild scores/scores_Wild.txt ./keys eval
 
 ## Pre-trained Models
 
-Pre-trained model checkpoints are available:
+Our reproduction checkpoints are hosted on Hugging Face:
+
+```python
+from huggingface_hub import hf_hub_download
+
+# v1 (recommended — best cross-domain generalization)
+checkpoint = hf_hub_download(repo_id="sukhdeveyash/XLS-R-SLS-Deepfake-Detection", filename="v1/epoch_2.pth")
+
+# v2 (validation-based early stopping)
+# checkpoint = hf_hub_download(repo_id="sukhdeveyash/XLS-R-SLS-Deepfake-Detection", filename="v2/epoch_16.pth")
+```
+
+Browse all checkpoints: [sukhdeveyash/XLS-R-SLS-Deepfake-Detection on Hugging Face](https://huggingface.co/sukhdeveyash/XLS-R-SLS-Deepfake-Detection)
+
+Original authors' pretrained models:
 - [Google Drive](https://drive.google.com/drive/folders/13vw_AX1jHdYndRu1edlgpdNJpCX8OnrH?usp=sharing)
 - [Baidu Pan](https://pan.baidu.com/s/1dj-hjvf3fFPIYdtHWqtCmg?pwd=shan)
 
