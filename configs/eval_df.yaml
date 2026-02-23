@@ -1,0 +1,9 @@
+# Evaluation config for ASVspoof 2021 DF track
+# Usage: python -m sls_asvspoof.train --config configs/eval_df.yaml --model_path <path> --eval_output <path>
+
+track: DF
+is_eval: true
+eval: true
+eval_batch_size: 4
+protocols_path: database/ASVspoof_DF_cm_protocols/ASVspoof2021.DF.cm.eval.trl.txt
+xlsr_model: xlsr2_300m.pt

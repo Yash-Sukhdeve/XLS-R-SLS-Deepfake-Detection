@@ -1,0 +1,19 @@
+# Training config for DF track (paper-matching hyperparameters)
+# Usage: python -m sls_asvspoof.train --config configs/train_df.yaml
+
+track: DF
+batch_size: 5
+num_epochs: 50
+lr: 0.000001
+loss: WCE
+loss_weights: [0.1, 0.9]
+patience: 10
+seed: 1234
+algo: 3
+eval_batch_size: 4
+num_workers: 8
+database_path: ./data
+protocols_path: ./database
+xlsr_model: xlsr2_300m.pt
+audio_max_len: 64600
+sample_rate: 16000

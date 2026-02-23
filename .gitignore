@@ -1,0 +1,41 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.eggs/
+
+# Model weights
+models/
+*.pth
+xls-r_300M/
+xlsr2_300m.pt
+
+# Training artifacts
+logs/
+results/
+plots/
+
+# Data (too large for git)
+data/
+
+# Fairseq source (install separately)
+fairseq-a54021305d6b3c4c5959ac9395135f63202db8f1/
+fairseq-a54021305d6b3c4c5959ac9395135f63202db8f1.zip
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Workflow / tooling
+.workflow/
+.claude/

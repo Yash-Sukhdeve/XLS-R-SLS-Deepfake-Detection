@@ -1,0 +1,49 @@
+================================================================
+Experiment v1 - Training Configuration
+================================================================
+Date: 2026-02-17
+Model: XLS-R 300M + SLS classifier
+
+Training command:
+  conda run -n SLS CUDA_VISIBLE_DEVICES=0 python main.py \
+    --track=DF \
+    --database_path=data/ \
+    --protocols_path=database/ \
+    --lr=0.000001 \
+    --batch_size=5 \
+    --loss=WCE \
+    --num_epochs=50
+
+Key hyperparameters:
+  - Learning rate: 1e-6
+  - Batch size: 5
+  - Loss: Weighted Cross-Entropy (weights=[0.1, 0.9])
+  - Optimizer: Adam (weight_decay=1e-4)
+  - RawBoost augmentation: algo=3 (SSI additive noise)
+  - Early stopping: patience=1, monitored training loss
+  - Validation: DISABLED (commented out in code)
+  - Seed: 1234
+
+Training data:
+  - ASVspoof2019 LA train: 25,380 utterances
+  - Protocol: database/ASVspoof_DF_cm_protocols/ASVspoof2019.LA.cm.train.trn.txt
+  - Audio: data/ASVspoof2019_LA_train/flac/
+
+Training results:
+  Epoch 0: loss = 0.070653
+  Epoch 1: loss = 0.004578
+  Epoch 2: loss = 0.000661 (best)
+  Epoch 3: loss = 0.001521 (early stopping triggered)
+  Best model: epoch_2.pth
+
+Evaluation results:
+  ASVspoof 2021 LA: EER = 3.51%, min t-DCF = 0.2701
+  In-the-Wild:     EER = 7.84%
+  ASVspoof 2021 DF: EER = 2.14%
+
+Comparison with published results:
+  Dataset          | Paper EER | Our EER | Gap
+  -----------------+-----------+---------+------
+  ASVspoof 2021 LA |   2.87%   |  3.51%  | +0.64
+  In-the-Wild      |   7.46%   |  7.84%  | +0.38
+  ASVspoof 2021 DF |   1.92%   |  2.14%  | +0.22
