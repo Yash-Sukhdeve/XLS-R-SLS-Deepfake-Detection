@@ -68,6 +68,38 @@ ln -s /path/to/ASVspoof2019/LA/ASVspoof2019_LA_cm_protocols database/ASVspoof_LA
 ln -s /path/to/ASVspoof2021_DF_cm_protocols database/ASVspoof_DF_cm_protocols
 ```
 
+### Evaluation Keys Directory
+
+The `keys/` directory (included in the repo) contains In-the-Wild keys. For DF and LA evaluation, you need the ASVspoof2021 keys from [asvspoof.org](https://www.asvspoof.org/index2021.html). The evaluation script expects the following layout:
+
+```
+keys/
+  in_the_wild_filelist.txt       # (included) In-the-Wild file list
+  in_the_wild_key.txt            # (included) In-the-Wild labels
+
+# For DF evaluation, pass truth_dir pointing to:
+/path/to/ASVspoof2021/keys/DF/
+  CM/trial_metadata.txt          # ASVspoof2021 DF trial metadata
+
+# For LA evaluation, pass truth_dir pointing to:
+/path/to/ASVspoof2021/keys/LA/
+  CM/trial_metadata.txt          # ASVspoof2021 LA trial metadata
+  ASV/trial_metadata.txt         # ASV trial metadata
+  ASV/ASVTorch_Kaldi/score.txt   # ASV system scores
+```
+
+Example evaluation with external keys:
+```bash
+# DF (pass the DF keys directory as truth_dir)
+python -m sls_asvspoof.evaluate --track DF scores/scores_DF.txt /path/to/ASVspoof2021/keys/DF eval
+
+# LA (pass the LA keys directory as truth_dir)
+python -m sls_asvspoof.evaluate --track LA scores/scores_LA.txt /path/to/ASVspoof2021/keys/LA eval
+
+# In-the-Wild (uses repo's keys/ directory)
+python -m sls_asvspoof.evaluate --track Wild scores/scores_Wild.txt ./keys eval
+```
+
 ## Pre-trained XLS-R Model
 
 Download the XLS-R 300M checkpoint from [fairseq/wav2vec/xlsr](https://github.com/pytorch/fairseq/tree/main/examples/wav2vec/xlsr) and place it in the repository root:

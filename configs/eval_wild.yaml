@@ -5,5 +5,6 @@ track: In-the-Wild
 is_eval: true
 eval: true
 eval_batch_size: 4
-protocols_path: database/ASVspoof_DF_cm_protocols/in_the_wild.eval.txt
+protocols_path: keys/in_the_wild_filelist.txt
+# database_path: /path/to/release_in_the_wild/  # set via CLI
 xlsr_model: xlsr2_300m.pt

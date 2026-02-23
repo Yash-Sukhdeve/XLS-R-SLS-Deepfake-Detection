@@ -27,7 +27,7 @@ from sls_asvspoof.data_utils import (
 )
 from sls_asvspoof.model import Model
 from tensorboardX import SummaryWriter
-from core_scripts.startup_config import set_random_seed
+from sls_asvspoof.utils import set_random_seed
 from tqdm import tqdm
 from torchvision import transforms
 
@@ -255,7 +255,10 @@ if __name__ == '__main__':
             yaml_config = yaml.safe_load(f)
         defaults = parser.parse_args([])
         for k, v in yaml_config.items():
-            if hasattr(args, k) and getattr(args, k) == getattr(defaults, k):
+            if not hasattr(args, k):
+                print('WARNING: unrecognized config key "{}" in {}'.format(k, args.config))
+                continue
+            if getattr(args, k) == getattr(defaults, k):
                 setattr(args, k, v)
 
     #make experiment reproducible

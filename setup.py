@@ -9,10 +9,10 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     python_requires='>=3.7,<3.8',
+    # Note: torch, torchvision, torchaudio are installed via conda/requirements.txt
+    # with CUDA support (+cu117). They are NOT listed here to avoid pip downgrading
+    # to CPU-only versions. See environment.yml or requirements.txt for full deps.
     install_requires=[
-        'torch==1.13.1',
-        'torchvision==0.14.1',
-        'torchaudio==0.13.1',
         'librosa==0.9.1',
         'tensorboardX==2.5',
         'tensorboard==2.11.2',

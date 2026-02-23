@@ -17,6 +17,7 @@ xlsr2_300m.pt
 logs/
 results/
 plots/
+scores/
 
 # Data (too large for git)
 data/
