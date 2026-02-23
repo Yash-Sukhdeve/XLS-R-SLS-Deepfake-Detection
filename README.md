@@ -6,11 +6,64 @@ The Selective Layer Summarization (SLS) classifier extracts attention-weighted f
 
 ## Results
 
-| Track | Paper EER (%) | Our EER (%) | Model |
-|-------|--------------|-------------|-------|
-| ASVspoof 2021 DF | 1.92 | 2.14 | epoch\_2.pth |
-| ASVspoof 2021 LA | 2.87 | 3.51 | epoch\_2.pth |
-| In-the-Wild | 7.46 | 7.84 | epoch\_2.pth |
+| Track | Paper EER (%) | v1 EER (%) | v2 EER (%) |
+|-------|--------------|------------|------------|
+| ASVspoof 2021 DF | 1.92 | **2.14** | 3.75 |
+| ASVspoof 2021 LA | 2.87 | 3.51 | **3.47** |
+| In-the-Wild | 7.46 | **7.84** | 12.67 |
+
+**v1** (baseline reproduction) closely matches the paper. **v2** (validation-based early stopping) improves LA slightly but degrades DF and In-the-Wild significantly. See [Experiments](#experiments) for details.
+
+## Experiments
+
+Both experiments train on ASVspoof2019 LA (25,380 utterances) with RawBoost SSI augmentation (algo=3), WCE loss (weights=[0.1, 0.9]), Adam optimizer (lr=1e-6, weight\_decay=1e-4), batch size 5, and seed 1234. Full configs and scores are archived in `experiments/v1/` and `experiments/v2/`. See `experiments/CHANGELOG.md` for all code changes between versions.
+
+### v1 — Baseline reproduction
+
+Matches the original paper's training setup: no validation set, early stopping with patience=1 on training loss.
+
+| | |
+|---|---|
+| **Early stopping** | patience=1 on training loss |
+| **Validation** | disabled |
+| **Epochs trained** | 4 (stopped at epoch 3) |
+| **Best model** | `epoch_2.pth` (train loss = 0.000661) |
+| **Checkpoint** | `models/model_DF_WCE_50_5_1e-06/epoch_2.pth` |
+
+```bash
+# Reproduce v1 training
+python -m sls_asvspoof.train --config configs/train_df.yaml --patience 1
+```
+
+### v2 — Validation-based early stopping
+
+Hypothesis: enabling validation and increasing patience would improve generalization by training longer and selecting the best-generalizing checkpoint.
+
+Changes from v1:
+1. Uncommented the ASVspoof2019 LA dev set validation loader (24,844 trials)
+2. Increased early stopping patience from 1 to 10
+3. Switched stopping criterion from training loss to validation loss
+4. Fixed `best_val_loss = running_loss` bug (was tracking wrong loss variable)
+5. Added `torch.no_grad()` in validation loop (original code caused OOM without it)
+
+| | |
+|---|---|
+| **Early stopping** | patience=10 on validation loss |
+| **Validation** | ASVspoof2019 LA dev (24,844 trials) |
+| **Epochs trained** | 27 (stopped at epoch 26, best at epoch 16) |
+| **Best val\_loss** | 0.000468 (val\_acc = 99.99%) |
+| **Checkpoint** | `models/model_DF_WCE_50_5_1e-06_v2_val_patience10/` |
+
+```bash
+# Reproduce v2 training
+python -m sls_asvspoof.train --config configs/train_df.yaml --patience 10
+```
+
+### Key finding
+
+v2 improved LA EER marginally (3.51% to 3.47%) but degraded DF (2.14% to 3.75%) and In-the-Wild (7.84% to 12.67%). The validation set (ASVspoof2019 LA dev) shares the same spoofing algorithms as the training set, so optimizing for it causes the model to overfit to LA-domain artifacts. The v1 checkpoint, despite training for only 4 epochs with no validation, generalizes better to unseen attack types in DF and In-the-Wild.
+
+This aligns with the well-documented cross-domain generalization problem in audio deepfake detection: models trained and validated on ASVspoof benchmarks tend to overfit to the specific attack types present in that domain ([Muller et al., Interspeech 2022](https://arxiv.org/abs/2203.16263); [Chen et al., Odyssey 2020](https://www.isca-archive.org/odyssey_2020/chen20_odyssey.html)).
 
 ## Prerequisites
 
@@ -112,11 +165,17 @@ ls xlsr2_300m.pt
 ## Training
 
 ```bash
-# Using the convenience script (recommended)
+# Using the convenience script (recommended — reproduces v1)
 bash scripts/train.sh
 
 # Or directly with config
 python -m sls_asvspoof.train --config configs/train_df.yaml
+
+# Reproduce v1 (patience=1, no validation — matches paper setup)
+python -m sls_asvspoof.train --config configs/train_df.yaml --patience 1
+
+# Reproduce v2 (patience=10, validation-based early stopping)
+python -m sls_asvspoof.train --config configs/train_df.yaml --patience 10
 
 # Override any config value via CLI
 python -m sls_asvspoof.train --config configs/train_df.yaml --batch_size 10 --num_epochs 100
@@ -124,28 +183,36 @@ python -m sls_asvspoof.train --config configs/train_df.yaml --batch_size 10 --nu
 
 ## Evaluation
 
-Generate score files then compute EER:
+Generate score files then compute EER. Replace `MODEL_PATH` with the checkpoint you want to evaluate (v1 or v2).
+
+```bash
+# v1 checkpoint (recommended — best cross-domain generalization)
+MODEL_PATH=models/model_DF_WCE_50_5_1e-06/epoch_2.pth
+
+# v2 checkpoint (validation-based early stopping)
+# MODEL_PATH=models/model_DF_WCE_50_5_1e-06_v2_val_patience10/epoch_16.pth
+```
 
 ```bash
 # DF track
 python -m sls_asvspoof.train --track=DF --is_eval --eval \
-    --model_path=models/model_DF_WCE_50_5_1e-06/epoch_2.pth \
+    --model_path=$MODEL_PATH \
     --protocols_path=database/ASVspoof_DF_cm_protocols/ASVspoof2021.DF.cm.eval.trl.txt \
     --database_path=/path/to/ASVspoof2021_DF_eval/ \
     --eval_output=scores/scores_DF.txt
-python -m sls_asvspoof.evaluate --track DF scores/scores_DF.txt ./keys eval
+python -m sls_asvspoof.evaluate --track DF scores/scores_DF.txt /path/to/ASVspoof2021/keys/DF eval
 
 # LA track
 python -m sls_asvspoof.train --track=LA --is_eval --eval \
-    --model_path=models/model_DF_WCE_50_5_1e-06/epoch_2.pth \
+    --model_path=$MODEL_PATH \
     --protocols_path=database/ASVspoof_DF_cm_protocols/ASVspoof2021.LA.cm.eval.trl.txt \
     --database_path=/path/to/ASVspoof2021_LA_eval/ \
     --eval_output=scores/scores_LA.txt
-python -m sls_asvspoof.evaluate --track LA scores/scores_LA.txt ./keys eval
+python -m sls_asvspoof.evaluate --track LA scores/scores_LA.txt /path/to/ASVspoof2021/keys/LA eval
 
 # In-the-Wild
 python -m sls_asvspoof.train --track=In-the-Wild --is_eval --eval \
-    --model_path=models/model_DF_WCE_50_5_1e-06/epoch_2.pth \
+    --model_path=$MODEL_PATH \
     --protocols_path=keys/in_the_wild_filelist.txt \
     --database_path=/path/to/release_in_the_wild/ \
     --eval_output=scores/scores_Wild.txt
@@ -201,8 +268,9 @@ XLS-R-SLS-Deepfake-Detection/
 │   └── eval.sh
 ├── keys/                      # Evaluation keys and file lists
 ├── experiments/               # Archived experiment results
-│   ├── CHANGELOG.md
-│   └── v1/                    # Baseline reproduction results
+│   ├── CHANGELOG.md           # Detailed code changes between v1 and v2
+│   ├── v1/                    # Baseline reproduction (patience=1, no validation)
+│   └── v2/                    # Validation-based early stopping (patience=10)
 ├── setup.py
 ├── environment.yml
 ├── requirements.txt
